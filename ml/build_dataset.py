@@ -1,90 +1,64 @@
+import os
 from datasets import load_dataset, load_from_disk, Dataset
 from typing import Tuple, List
 
-DATASET_PATH = "dataset/pencity/quickdraw"
+DATASET_PATH = os.path.join(os.path.dirname(__file__), "dataset", "pencity")
+PROJECT_LABELS = [
+    "house",
+    "bicycle",
+    "bridge",
+    "bus",
+    "car",
+    "church",
+    "firetruck",
+    "garden",
+    "hospital",
+    "motorbike",
+    "palm tree",
+    "pickup truck",
+    "police car",
+    "river",
+    "roller coaster",
+    "rollerskates",
+    "school bus",
+    "skyscraper",
+    "tent",
+    "The Eiffel Tower",
+    "tractor",
+    "traffic light",
+    "train",
+    "tree",
+    "van",
+]
 
 
-def build_dataset() -> Tuple[Dataset, List[str]]:
-    dataset = load_from_disk(DATASET_PATH)
-    list_labels = [
-        "house",
-        "bicycle",
-        "bridge",
-        "bus",
-        "car",
-        "church",
-        "firetruck",
-        "garden",
-        "hospital",
-        "motorbike",
-        "palm tree",
-        "pickup truck",
-        "police car",
-        "river",
-        "roller coaster",
-        "rollerskates",
-        "school bus",
-        "skyscraper",
-        "stairs",
-        "tent",
-        "The Eiffel Tower",
-        "tractor",
-        "traffic light",
-        "train",
-        "tree",
-        "van",
-    ]
-    return dataset.shuffle(), list_labels
+def build_dataset() -> Tuple[Dataset, Dataset, List[str]]:
+    try:
+        dataset = load_from_disk(DATASET_PATH)
+        print("Dataset exists")
+    except:
+        print("Dataset not found, creating it")
+        preprocess_dataset()
+        dataset = load_from_disk(DATASET_PATH)
+    return dataset["train"], dataset["test"], PROJECT_LABELS
 
 
 def preprocess_dataset() -> None:
-    try:
-        dataset = load_from_disk(DATASET_PATH)
-        print("Dataset already exists")
-        return
-    except:
-        print("Dataset not found, creating it")
     dataset = load_dataset("Xenova/quickdraw", split="train")
     list_labels = dataset.features["label"].names
-    labels_keep = [
-        "house",
-        "bicycle",
-        "bridge",
-        "bus",
-        "car",
-        "church",
-        "firetruck",
-        "garden",
-        "hospital",
-        "motorbike",
-        "palm tree",
-        "pickup truck",
-        "police car",
-        "river",
-        "roller coaster",
-        "rollerskates",
-        "school bus",
-        "skyscraper",
-        "stairs",
-        "tent",
-        "The Eiffel Tower",
-        "tractor",
-        "traffic light",
-        "train",
-        "tree",
-        "van",
-    ]
 
     print("Before filtering: ", len(dataset))
-    labels_keep_index = [list_labels.index(label) for label in labels_keep]
+    labels_keep_index = [list_labels.index(label) for label in PROJECT_LABELS]
     dataset = dataset.filter(lambda example: example["label"] in labels_keep_index)
     print("After filtering: ", len(dataset))
 
     # replace label index by index in labels_keep
     dataset = dataset.map(
-        lambda example: {"label": labels_keep.index(list_labels[example["label"]])}
+        lambda example: {"label": PROJECT_LABELS.index(list_labels[example["label"]])}
     )
-    dataset.features["label"].names = labels_keep
+
+    # split in train and test
+    dataset = dataset.train_test_split(test_size=0.2, shuffle=True, seed=42)
 
     # save dataset
     dataset.save_to_disk(DATASET_PATH)
@@ -109,8 +83,7 @@ def test_dataset(dataset):
 
 
 if __name__ == "__main__":
-    preprocess_dataset()
-    dataset, labels = build_dataset()
+    train_set, test_set, labels = build_dataset()
     print("Labels :")
     print(labels)
-    test_dataset(dataset)
+    test_dataset(train_set)
