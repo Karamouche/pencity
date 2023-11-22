@@ -1,12 +1,15 @@
 from datasets import Dataset
 from typing import List, Tuple
+import os
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import random as rd
 import numpy as np
+import cv2
 
 from build_dataset import build_dataset
+from utils import from_coords_to_yolo, from_yolo_to_coords
 
 
 def train(
@@ -17,12 +20,12 @@ def train(
     eval_every_n_steps=1024,
 ):
     output_dir = (f"./{model_name}",)
+    IMAGE_SIZE = 416
 
     def build_batch(
         dataset: Dataset, batchsize: int = 8
-    ) -> Tuple[np.ndarray, torch.Tensor]:
+    ) -> Tuple[List[np.ndarray], List[torch.Tensor]]:
         N_ITEMS = 16
-        IMAGE_SIZE = 416
         batch_images = []
         batch_tensors = []
         for i in tqdm(range(batchsize), desc="Building batches"):
@@ -32,38 +35,50 @@ def train(
             for img in images:
                 label = img["label"]
                 img = np.array(img["image"])
-                x = rd.randint(0, IMAGE_SIZE - img.shape[0])
-                y = rd.randint(0, IMAGE_SIZE - img.shape[1])
+                H, W = img.shape
+                x = rd.randint(0, IMAGE_SIZE - W)
+                y = rd.randint(0, IMAGE_SIZE - H)
                 background[x : x + img.shape[0], y : y + img.shape[1]] = img
-                # Create YOLO tensor values
-                Bx = (x + img.shape[0] / 2) / IMAGE_SIZE
-                By = (y + img.shape[1] / 2) / IMAGE_SIZE
-                Bh = img.shape[0] / IMAGE_SIZE
-                Bw = img.shape[1] / IMAGE_SIZE
-                # Create YOLO tensor
-                yolo_tensor = torch.zeros(len(class_names) + 5)
-                yolo_tensor[0] = 1  # Set Pc to 1
-                yolo_tensor[1] = Bx
-                yolo_tensor[2] = By
-                yolo_tensor[3] = Bh
-                yolo_tensor[4] = Bw
-                yolo_tensor[label + 5] = 1  # Set class label to 1
+                yolo_tensor = from_coords_to_yolo(
+                    img, x, y, label, IMAGE_SIZE, class_names
+                )
                 list_of_tensors.append(yolo_tensor)
             batch_images.append(background)
             batch_tensors.append(torch.stack(list_of_tensors))
         print("Batch built")
         return batch_images, batch_tensors
 
+    def save_tensor(
+        batch_images: List[np.ndarray], batch_tensors: List[torch.Tensor]
+    ) -> None:
+        batch_folder = os.path.join(os.path.dirname(__file__), "batch")
+        # check if batch folder exists
+        if not os.path.exists(batch_folder):
+            os.makedirs(batch_folder)
+        # save batch images in batch/images folder
+        if not os.path.exists(os.path.join(batch_folder, "images")):
+            os.makedirs(os.path.join(batch_folder, "images"))
+        for i, img in enumerate(batch_images):
+            plt.imsave(
+                os.path.join(batch_folder, "images", f"image{i}.png"), img, cmap="gray"
+            )
+        with open(os.path.join(batch_folder, "tensor.yml"), "w") as f:
+            f.write("tensors:\n")
+            for i, tensor in enumerate(batch_tensors):
+                f.write(f"  - tensor_{i}:\n")
+                f.write(f"      - {tensor.tolist()}\n")
+        print("Batch saved")
+
     batch_images, batch_tensors = build_batch(train_set, batchsize=4)
-    # saves images in ./images folder
-    for i, img in enumerate(batch_images):
-        plt.imsave(f"ml/images/{i}.png", img, cmap="gray")
-    # save tensors in tensor.yml folder
-    with open("ml/tensors.yml", "w") as f:
-        f.write("tensors:\n")
-        for i, tensor in enumerate(batch_tensors):
-            f.write(f"  - tensor_{i}:\n")
-            f.write(f"      - {tensor.tolist()}\n")
+    new_batch_images = []
+    # draw bounding boxes on each image in batch_images
+    for tensor, img in zip(batch_tensors, batch_images):
+        for i in range(len(tensor)):
+            if tensor[i][0] == 1:
+                x, y, h, w = from_yolo_to_coords(tensor[i], IMAGE_SIZE)
+                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), 2)
+        new_batch_images.append(img)
+    save_tensor(new_batch_images, batch_tensors)
 
 
 if __name__ == "__main__":

@@ -3,5 +3,4 @@ dataset/*
 *.log
 __pycache__
 *.pt
-images
-*.yml
+batch
