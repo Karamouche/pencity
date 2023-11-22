@@ -1,4 +1,8 @@
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+import argparse
+from tqdm import tqdm
 from datasets import load_dataset, load_from_disk, Dataset
 from typing import Tuple, List
 
@@ -65,25 +69,45 @@ def preprocess_dataset() -> None:
     print("Dataset saved to disk")
 
 
-def test_dataset(dataset):
+def viz_dataset(dataset):
     # plot some images with their labels
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     fig, axs = plt.subplots(5, 5, figsize=(10, 10))
     for i in range(5):
         for j in range(5):
             index = np.random.randint(len(dataset))
             img = dataset[index]["image"]
             label = dataset[index]["label"]
-            axs[i, j].imshow(img)
+            axs[i, j].imshow(img, cmap="gray")
             axs[i, j].set_title(labels[label])
             axs[i, j].axis("off")
     plt.show()
 
 
+def values_count(train, test, labels):
+    for name, dataset in [("train", train), ("test", test)]:
+        print(f"There is {len(dataset)} in the {name}ing dataset")
+        # show repartition of labels
+        label_count = {}
+        for example in tqdm(dataset, desc=f"Counting labels in {name}ing dataset"):
+            label = example["label"]
+            label_count[label] = label_count.get(label, 0) + 1
+        print("Repartition of labels:")
+        for label in label_count:
+            print(f"{labels[label]}: {label_count[label]}")
+        print("=================")
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--count", action="store_true")
+parser.add_argument("-v", "--vizualise", action="store_true")
+
 if __name__ == "__main__":
+    args = parser.parse_args()
     train_set, test_set, labels = build_dataset()
     print("Labels :")
     print(labels)
-    test_dataset(train_set)
+    if args.count:
+        print("=================")
+        values_count(train_set, test_set, labels)
+    if args.vizualise:
+        viz_dataset(train_set)
