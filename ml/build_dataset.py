@@ -69,7 +69,7 @@ def preprocess_dataset() -> None:
     print("Dataset saved to disk")
 
 
-def viz_dataset(dataset):
+def viz_dataset(dataset: Dataset) -> None:
     # plot some images with their labels
     fig, axs = plt.subplots(5, 5, figsize=(10, 10))
     for i in range(5):
@@ -83,9 +83,9 @@ def viz_dataset(dataset):
     plt.show()
 
 
-def values_count(train, test, labels):
+def values_count(train: Dataset, test: Dataset, labels: List[str]) -> None:
     for name, dataset in [("train", train), ("test", test)]:
-        print(f"There is {len(dataset)} in the {name}ing dataset")
+        print(f"There is {len(dataset):,} in the {name}ing dataset")
         # show repartition of labels
         label_count = {}
         for example in tqdm(dataset, desc=f"Counting labels in {name}ing dataset"):
@@ -93,7 +93,7 @@ def values_count(train, test, labels):
             label_count[label] = label_count.get(label, 0) + 1
         print("Repartition of labels:")
         for label in label_count:
-            print(f"{labels[label]}: {label_count[label]}")
+            print(f"{labels[label]}: {label_count[label]:,}")
         print("=================")
 
 
@@ -104,6 +104,7 @@ parser.add_argument("-v", "--vizualise", action="store_true")
 if __name__ == "__main__":
     args = parser.parse_args()
     train_set, test_set, labels = build_dataset()
+    print(f"Dataset containes {len(labels)} differents labels")
     print("Labels :")
     print(labels)
     if args.count:
