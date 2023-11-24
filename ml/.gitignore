@@ -2,3 +2,5 @@
 dataset/*
 *.log
 __pycache__
+*.pt
+batch
