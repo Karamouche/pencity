@@ -37,14 +37,21 @@ def train(
                 img = np.array(img["image"])
                 # resize the image randomly between x1 and x4
                 H, W = img.shape
+                img_ratio = float(W) / float(H)
+                W = rd.randint(W, W * 4)
+                H = int(W / img_ratio)
                 img = cv2.resize(
                     img,
-                    (rd.randint(W, W * 4), rd.randint(H, H * 4)),
+                    (W, H),
                     interpolation=cv2.INTER_CUBIC,
                 )
-                H, W = img.shape
+                assert img.shape == (H, W)
                 x = rd.randint(0, BACKGROUND_SIZE - W)
                 y = rd.randint(0, BACKGROUND_SIZE - H)
+                # be sure that the image is not overlapping another one
+                while np.any(background[y : y + H, x : x + W]):
+                    x = rd.randint(0, BACKGROUND_SIZE - W)
+                    y = rd.randint(0, BACKGROUND_SIZE - H)
                 background[y : y + H, x : x + W] = img
                 yolo_tensor = from_coords_to_yolo(
                     img, x, y, label, BACKGROUND_SIZE, class_names
@@ -69,22 +76,21 @@ def train(
             plt.imsave(
                 os.path.join(batch_folder, "images", f"image{i}.png"), img, cmap="gray"
             )
-        with open(os.path.join(batch_folder, "tensor.yml"), "w") as f:
-            f.write("tensors:\n")
-            for i, tensor in enumerate(batch_tensors):
-                f.write(f"  - tensor_{i}:\n")
-                f.write(f"      - {tensor.tolist()}\n")
+        # save batch tensors in batch/tensors folder
+        if not os.path.exists(os.path.join(batch_folder, "tensors")):
+            os.makedirs(os.path.join(batch_folder, "tensors"))
+        for i, tensors in enumerate(batch_tensors):
+            with open(
+                os.path.join(batch_folder, "tensors", f"tensor{i}.yml"), "w"
+            ) as f:
+                for element in tensors:
+                    # save in format Pc x y w h c1 c2 ... cn
+                    for propertie in element.tolist():
+                        f.write(f"{propertie} ")
+                    f.write("\n")
         print("Batch saved")
 
     batch_images, batch_tensors = build_batch(train_set, batchsize=4)
-    # new_batch_images = []
-    # draw bounding boxes on each image in batch_images
-    # for tensor, img in zip(batch_tensors, batch_images):
-    #     for items in tensor:
-    #         if items[0] == 1:
-    #             x, y, h, w = from_yolo_to_coords(items, BACKGROUND_SIZE)
-    #             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), 2)
-    #     new_batch_images.append(img)
     save_tensor(batch_images, batch_tensors)
 
 
