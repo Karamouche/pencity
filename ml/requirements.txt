@@ -1,4 +1,5 @@
 datasets
 torch
 torchvision
+opencv-python
 matplotlib

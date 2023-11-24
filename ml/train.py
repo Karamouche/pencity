@@ -20,7 +20,7 @@ def train(
     eval_every_n_steps=1024,
 ):
     output_dir = (f"./{model_name}",)
-    IMAGE_SIZE = 416
+    BACKGROUND_SIZE = 640
 
     def build_batch(
         dataset: Dataset, batchsize: int = 8
@@ -30,17 +30,24 @@ def train(
         batch_tensors = []
         for i in tqdm(range(batchsize), desc="Building batches"):
             images = dataset.shuffle().select(range(N_ITEMS))
-            background = np.zeros((IMAGE_SIZE, IMAGE_SIZE))
+            background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
                 label = img["label"]
                 img = np.array(img["image"])
+                # resize the image randomly between x1 and x4
                 H, W = img.shape
-                x = rd.randint(0, IMAGE_SIZE - W)
-                y = rd.randint(0, IMAGE_SIZE - H)
-                background[x : x + img.shape[0], y : y + img.shape[1]] = img
+                img = cv2.resize(
+                    img,
+                    (rd.randint(W, W * 4), rd.randint(H, H * 4)),
+                    interpolation=cv2.INTER_CUBIC,
+                )
+                H, W = img.shape
+                x = rd.randint(0, BACKGROUND_SIZE - W)
+                y = rd.randint(0, BACKGROUND_SIZE - H)
+                background[y : y + H, x : x + W] = img
                 yolo_tensor = from_coords_to_yolo(
-                    img, x, y, label, IMAGE_SIZE, class_names
+                    img, x, y, label, BACKGROUND_SIZE, class_names
                 )
                 list_of_tensors.append(yolo_tensor)
             batch_images.append(background)
@@ -70,15 +77,15 @@ def train(
         print("Batch saved")
 
     batch_images, batch_tensors = build_batch(train_set, batchsize=4)
-    new_batch_images = []
+    # new_batch_images = []
     # draw bounding boxes on each image in batch_images
-    for tensor, img in zip(batch_tensors, batch_images):
-        for i in range(len(tensor)):
-            if tensor[i][0] == 1:
-                x, y, h, w = from_yolo_to_coords(tensor[i], IMAGE_SIZE)
-                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), 2)
-        new_batch_images.append(img)
-    save_tensor(new_batch_images, batch_tensors)
+    # for tensor, img in zip(batch_tensors, batch_images):
+    #     for items in tensor:
+    #         if items[0] == 1:
+    #             x, y, h, w = from_yolo_to_coords(items, BACKGROUND_SIZE)
+    #             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 255), 2)
+    #     new_batch_images.append(img)
+    save_tensor(batch_images, batch_tensors)
 
 
 if __name__ == "__main__":
