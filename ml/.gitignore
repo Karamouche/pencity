@@ -1,5 +1,5 @@
 *.arrow
-dataset/*
+data/pencity/*
 *.log
 __pycache__
 *.pt

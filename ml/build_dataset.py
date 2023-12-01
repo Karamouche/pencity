@@ -6,7 +6,7 @@ from tqdm import tqdm
 from datasets import load_dataset, load_from_disk, Dataset
 from typing import Tuple, List
 
-DATASET_PATH = os.path.join(os.path.dirname(__file__), "dataset", "pencity")
+DATASET_PATH = os.path.join(os.path.dirname(__file__), "data", "pencity")
 PROJECT_LABELS = [
     "house",
     "bicycle",

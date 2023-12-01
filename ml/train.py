@@ -3,13 +3,13 @@ from typing import List, Tuple
 import os
 import torch
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+from PIL import Image
 import random as rd
 import numpy as np
 import cv2
 
 from build_dataset import build_dataset
-from misc import from_coords_to_yolo, from_yolo_to_coords
+from misc import from_coords_to_yolo, save_tensors
 
 
 def train(
@@ -29,7 +29,7 @@ def train(
         N_ITEMS = 16
         batch_images = []
         batch_tensors = []
-        for i in tqdm(range(batchsize), desc="Building batches"):
+        for i in tqdm(range(batchsize), desc="Building batch"):
             images = dataset.shuffle().select(range(N_ITEMS))
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
@@ -60,46 +60,11 @@ def train(
                 list_of_tensors.append(yolo_tensor)
             batch_images.append(background)
             batch_tensors.append(torch.stack(list_of_tensors))
-        print("Batch built")
         return batch_images, batch_tensors
 
-    def save_tensors(
-        batch_images: List[np.ndarray], batch_tensors: List[torch.Tensor]
-    ) -> None:
-        batch_folder = os.path.join(os.path.dirname(__file__), "batch")
-        # check if batch folder exists
-        if not os.path.exists(batch_folder):
-            os.makedirs(batch_folder)
-        # save batch images in batch/images folder
-        if not os.path.exists(os.path.join(batch_folder, "images")):
-            os.makedirs(os.path.join(batch_folder, "images"))
-        else:
-            for file in os.listdir(os.path.join(batch_folder, "images")):
-                os.remove(os.path.join(batch_folder, "images", file))
-        for i, img in enumerate(batch_images):
-            plt.imsave(
-                os.path.join(batch_folder, "images", f"image{i}.png"), img, cmap="gray"
-            )
-        # save batch tensors in batch/tensors folder
-        if not os.path.exists(os.path.join(batch_folder, "tensors")):
-            os.makedirs(os.path.join(batch_folder, "tensors"))
-        else:
-            for file in os.listdir(os.path.join(batch_folder, "tensors")):
-                os.remove(os.path.join(batch_folder, "tensors", file))
-        for i, tensors in enumerate(batch_tensors):
-            with open(
-                os.path.join(batch_folder, "tensors", f"tensor{i}.yml"), "w"
-            ) as f:
-                for element in tensors:
-                    # save in format Pc x y w h c1 c2 ... cn
-                    for propertie in element.tolist():
-                        f.write(f"{propertie} ")
-                    f.write("\n")
-        print("Batch saved")
-
     # build a batch to check if everything is working
-    batch_images, batch_tensors = build_batch(train_set, batchsize=batch_size)
-    save_tensors(batch_images, batch_tensors)
+    # batch_images, batch_tensors = build_batch(train_set, batchsize=batch_size)
+    # save_tensors(batch_images, batch_tensors)
 
     def load_model(model_name: str) -> torch.hub:
         # cd to ml
@@ -108,8 +73,6 @@ def train(
         return model
 
     model = load_model(model_name)
-    # print the architecture of the model
-    # print(model)
     print("Model loaded")
 
     def train_model(model: torch.hub, train_set: Dataset, num_epochs: int):
@@ -118,13 +81,13 @@ def train(
 
         for epoch in range(num_epochs):
             running_loss = 0.0
-            batches = [build_batch(train_set, batchsize=batch_size) for i in range(10)]
-            for i, (images, targets) in enumerate(batches):
-                # convert images to PIL image
-                images = torch.from_numpy(images).unsqueeze(0)
+            images, targets = build_batch(train_set, batchsize=batch_size)
+            for i, (image, target) in enumerate(zip(images, targets)):
+                # convert image to torch tensor
+                image = torch.tensor(image).unsqueeze(0).unsqueeze(0)
                 optimizer.zero_grad()
-                outputs = model(images)
-                loss = criterion(outputs, targets)
+                outputs = model(image)
+                loss = criterion(outputs, target)
                 loss.backward()
                 optimizer.step()
 
@@ -143,4 +106,4 @@ def train(
 
 if __name__ == "__main__":
     train_set, test_set, labels = build_dataset()
-    train(train_set, test_set, labels, batch_size=8)
+    train(train_set, test_set, labels, batch_size=2)

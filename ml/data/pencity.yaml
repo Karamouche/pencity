@@ -1,0 +1,40 @@
+# Pencity Dataset Configuration
+
+# Dataset path
+path: ../data/pencity # Update the path accordingly
+
+# Train/val/test sets
+train: train
+val: test
+
+# Classes
+names:
+    0: house
+    1: bicycle
+    2: bridge
+    3: bus
+    4: car
+    5: church
+    6: firetruck
+    7: garden
+    8: hospital
+    9: motorbike
+    10: palm tree
+    11: pickup truck
+    12: police car
+    13: river
+    14: roller coaster
+    15: rollerskates
+    16: school bus
+    17: skyscraper
+    18: tent
+    19: The Eiffel Tower
+    20: tractor
+    21: traffic light
+    22: train
+    23: tree
+    24: van
+
+# Download script/URL (optional)
+download: |
+    # past script here
