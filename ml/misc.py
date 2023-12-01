@@ -23,10 +23,13 @@ def from_coords_to_yolo(
     - class_names (List[str]): List of class names
 
     Returns:
-    - torch.Tensor: YOLO tensor [Pc, Bx, By, Bh, Bw, c1, c2, ..., cn]
+    - torch.Tensor: YOLO tensor [Cn, Bx, By, Bh, Bw]
     """
 
     H, W = img.shape
+
+    # Calculate class number
+    Cn = class_names.index(label)
 
     # Calculate YOLO tensor values
     Bx = (x + W / 2) / BACKGROUND_SIZE
@@ -35,13 +38,12 @@ def from_coords_to_yolo(
     Bw = W / BACKGROUND_SIZE
 
     # Create YOLO tensor
-    yolo_tensor = torch.zeros(len(class_names) + 5)
-    yolo_tensor[0] = 1  # Set Pc to 1
+    yolo_tensor = torch.zeros(5)
+    yolo_tensor[0] = Cn
     yolo_tensor[1] = Bx
     yolo_tensor[2] = By
     yolo_tensor[3] = Bh
     yolo_tensor[4] = Bw
-    yolo_tensor[label + 5] = 1  # Set class label to 1
 
     return yolo_tensor
 
@@ -87,17 +89,15 @@ def save_tensors(
         for file in os.listdir(os.path.join(batch_folder, "images")):
             os.remove(os.path.join(batch_folder, "images", file))
     for i, img in enumerate(batch_images):
-        plt.imsave(
-            os.path.join(batch_folder, "images", f"image{i}.png"), img, cmap="gray"
-        )
-    # save batch tensors in batch/tensors folder
-    if not os.path.exists(os.path.join(batch_folder, "tensors")):
-        os.makedirs(os.path.join(batch_folder, "tensors"))
+        plt.imsave(os.path.join(batch_folder, "images", f"{i}.png"), img, cmap="gray")
+    # save batch labels in batch/labels folder
+    if not os.path.exists(os.path.join(batch_folder, "labels")):
+        os.makedirs(os.path.join(batch_folder, "labels"))
     else:
-        for file in os.listdir(os.path.join(batch_folder, "tensors")):
-            os.remove(os.path.join(batch_folder, "tensors", file))
+        for file in os.listdir(os.path.join(batch_folder, "labels")):
+            os.remove(os.path.join(batch_folder, "labels", file))
     for i, tensors in enumerate(batch_tensors):
-        with open(os.path.join(batch_folder, "tensors", f"tensor{i}.yml"), "w") as f:
+        with open(os.path.join(batch_folder, "labels", f"{i}.txt"), "w") as f:
             for element in tensors:
                 # save in format Pc x y w h c1 c2 ... cn
                 for propertie in element.tolist():
