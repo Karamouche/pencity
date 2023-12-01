@@ -29,7 +29,7 @@ def from_coords_to_yolo(
     H, W = img.shape
 
     # Calculate class number
-    Cn = class_names.index(label)
+    Cn = label
 
     # Calculate YOLO tensor values
     Bx = (x + W / 2) / BACKGROUND_SIZE
@@ -53,7 +53,7 @@ def from_yolo_to_coords(tensor: torch.Tensor, BACKGROUND_SIZE: int) -> List[int]
     Converts a YOLO tensor to bounding box coordinates.
 
     Parameters:
-    - tensor (torch.Tensor): YOLO tensor [Pc, Bx, By, Bh, Bw, c1, c2, ..., cn]
+    - tensor (torch.Tensor): YOLO tensor [Cn, Bx, By, Bh, Bw]
     - BACKGROUND_SIZE (int): Size of the input image
 
     Returns:

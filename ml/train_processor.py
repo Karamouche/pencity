@@ -18,7 +18,7 @@ def train_processor(
     class_names: List[str],
     BACKGROUND_SIZE: int = 416,
     eval_every_n_steps=1024,
-    dataset_size=200,
+    dataset_size=512,
 ):
     def build_batch(
         dataset: Dataset, amount: int = 8, seed: int = 0
@@ -31,6 +31,9 @@ def train_processor(
             rd.seed(seed)
         for _ in tqdm(range(amount), desc="Building batch"):
             images = dataset.shuffle().select(range(N_ITEMS))
+            # if there is more that 2 items of the same class, reshuffle and retry
+            while len(set([img["label"] for img in images])) < N_ITEMS / 2:
+                images = dataset.shuffle().select(range(N_ITEMS))
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
@@ -70,4 +73,4 @@ def train_processor(
 
 if __name__ == "__main__":
     train_set, test_set, labels = build_dataset()
-    train_processor(train_set, test_set, labels)
+    train_processor(train_set, test_set, labels, dataset_size=64)
