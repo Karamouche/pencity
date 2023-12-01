@@ -12,7 +12,7 @@ from build_dataset import build_dataset
 from misc import from_coords_to_yolo, save_tensors
 
 
-def train(
+def train_processor(
     train_set: Dataset,
     test_set: Dataset,
     class_names: List[str],
@@ -101,9 +101,7 @@ def train(
         torch.save(model.state_dict(), os.path.join(output_dir, "model.pth"))
         print("Finished Training")
 
-    train_model(model, train_set, num_epochs=10)
-
 
 if __name__ == "__main__":
     train_set, test_set, labels = build_dataset()
-    train(train_set, test_set, labels, batch_size=2)
+    train_processor(train_set, test_set, labels, batch_size=2)
