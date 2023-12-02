@@ -49,17 +49,11 @@ def place_images(base_image, images_to_place, image_size=82):
     image_data_list = list(zip(image_data, image_label))
 
     for img, img_label in image_data_list:
-        
-        # works around the image to improve sharpness while enlarging it
-        
-        # probleme des traits qui ont des trous lors du resize
-        img = img.resize((image_size, image_size), Image.LANCZOS) 
+
         img_np = np.array(img)
-
-        threshold = 128
-        _, binary_np = cv2.threshold(img_np, threshold, 255, cv2.THRESH_BINARY)
-
-        binary = Image.fromarray(binary_np)
+        resized_img_np = cv2.resize(img_np, (image_size, image_size), interpolation=cv2.INTER_CUBIC)
+        inverted_img_np = 255 - resized_img_np
+        img = Image.fromarray(inverted_img_np)
 
         while True:
             x = random.randint(0, base_w - image_size)
@@ -69,7 +63,7 @@ def place_images(base_image, images_to_place, image_size=82):
             if not check_overlap(new_box, placed_boxes):
                 break
 
-        base_image.paste(img, (x, y), img)
+        base_image.paste(img, (x, y))
         placed_boxes.append(new_box)
 
         x_center, y_center = (x + image_size / 2) / base_w, (y + image_size / 2) / base_h
