@@ -76,9 +76,11 @@ def from_yolo_to_coords(tensor: torch.Tensor, BACKGROUND_SIZE: int) -> List[int]
 
 
 def save_tensors(
-    batch_images: List[np.ndarray], batch_tensors: List[torch.Tensor]
+    batch_images: List[np.ndarray],
+    batch_tensors: List[torch.Tensor],
+    split: str = "train",
 ) -> None:
-    batch_folder = os.path.join(os.path.dirname(__file__), "batch")
+    batch_folder = os.path.join(os.path.dirname(__file__), "data", "batch", split)
     # check if batch folder exists
     if not os.path.exists(batch_folder):
         os.makedirs(batch_folder)
@@ -99,8 +101,11 @@ def save_tensors(
     for i, tensors in enumerate(batch_tensors):
         with open(os.path.join(batch_folder, "labels", f"{i}.txt"), "w") as f:
             for element in tensors:
-                # save in format Pc x y w h c1 c2 ... cn
-                for propertie in element.tolist():
-                    f.write(f"{propertie} ")
+                # save in format [Cn, Bx, By, Bh, Bw]
+                for j, propertie in enumerate(element.tolist()):
+                    if j == 0:
+                        f.write(f"{int(propertie)} ")
+                    else:
+                        f.write(f"{propertie} ")
                 f.write("\n")
-    print("Batch saved")
+    print(f"Batch for {split} saved")

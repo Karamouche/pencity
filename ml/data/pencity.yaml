@@ -1,7 +1,7 @@
 # Pencity Dataset Configuration
 
 # Dataset path
-path: ../data/pencity # Update the path accordingly
+path: ../data/batch # Update the path accordingly
 
 # Train/val/test sets
 train: train

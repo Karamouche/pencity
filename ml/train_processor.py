@@ -19,6 +19,7 @@ def train_processor(
     BACKGROUND_SIZE: int = 416,
     eval_every_n_steps=1024,
     dataset_size=512,
+    seed=0,
 ):
     def build_batch(
         dataset: Dataset, amount: int = 8, seed: int = 0
@@ -66,8 +67,16 @@ def train_processor(
         return batch_images, batch_tensors
 
     # build and save dataset
-    batch_images, batch_tensors = build_batch(train_set, amount=dataset_size)
-    save_tensors(batch_images, batch_tensors)
+    print("Building train data")
+    train_batch_images, train_batch_tensors = build_batch(
+        train_set, amount=dataset_size, seed=seed
+    )
+    save_tensors(train_batch_images, train_batch_tensors, split="train")
+    print("Building test data")
+    test_batch_images, test_batch_tensors = build_batch(
+        train_set, amount=int(dataset_size / 4), seed=seed
+    )
+    save_tensors(test_batch_images, test_batch_tensors, split="test")
     print("Dataset built")
 
 
