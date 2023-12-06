@@ -69,7 +69,7 @@ def train_processor(
                 list_of_tensors.append(yolo_tensor)
             return background, torch.stack(list_of_tensors)
 
-        with ThreadPoolExecutor(max_workers=16) as executor:
+        with ThreadPoolExecutor() as executor:
             with tqdm(total=amount, desc=f"Building batch") as pbar:
                 futures = []
                 for _ in range(amount):
