@@ -99,4 +99,4 @@ def train_processor(
 
 if __name__ == "__main__":
     train_set, test_set, labels = build_dataset()
-    train_processor(train_set, test_set, labels, dataset_size=4096)
+    train_processor(train_set, test_set, labels, dataset_size=20)

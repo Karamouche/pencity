@@ -42,6 +42,13 @@ def build_dataset() -> Tuple[Dataset, Dataset, List[str]]:
         print("Dataset exists")
     except:
         print("Dataset not found, creating it")
+        print("Do you want to build it ? (y/n)")
+        anwer = str(input())
+        while anwer not in ["y", "n"]:
+            print("Please answer by y or n")
+            anwer = str(input())
+        if anwer == "n":
+            return
         preprocess_dataset()
         dataset = load_from_disk(DATASET_PATH)
     return dataset["train"], dataset["test"], PROJECT_LABELS
