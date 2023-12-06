@@ -8,33 +8,25 @@ train: train
 val: test
 
 # Classes
+nc: 17
 names:
     0: house
-    1: bicycle
-    2: bridge
-    3: bus
-    4: car
-    5: church
-    6: firetruck
-    7: garden
-    8: hospital
-    9: motorbike
-    10: palm tree
-    11: pickup truck
-    12: police car
-    13: river
-    14: roller coaster
-    15: rollerskates
-    16: school bus
-    17: skyscraper
-    18: tent
-    19: The Eiffel Tower
-    20: tractor
-    21: traffic light
-    22: train
-    23: tree
-    24: van
-
+    1: bridge
+    2: bus
+    3: car
+    4: church
+    5: garden
+    6: hospital
+    7: palm tree
+    8: police car
+    9: river
+    10: roller coaster
+    11: school bus
+    12: skyscraper
+    13: tent
+    14: The Eiffel Tower
+    15: train
+    16: tree
 # Download script/URL (optional)
 download: |
     # past script here
