@@ -14,14 +14,14 @@ PROJECT_LABELS = [
     "bus",
     "car",
     "church",
-    "firetruck",
+    #"firetruck",
     "garden",
     "hospital",
     #"motorbike",
     "palm tree",
-    "pickup truck",
+    #"pickup truck",
     "police car",
-    #"river",
+    "river",
     "roller coaster",
     #"rollerskates",
     "school bus",
@@ -32,7 +32,7 @@ PROJECT_LABELS = [
     #"traffic light",
     "train",
     "tree",
-    "van",
+    #"van",
 ]
 
 
