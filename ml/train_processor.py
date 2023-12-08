@@ -8,7 +8,8 @@ import random as rd
 import numpy as np
 import cv2
 from concurrent.futures import ThreadPoolExecutor
-
+import gc
+import argparse
 
 from build_dataset import build_dataset
 from misc import from_coords_to_yolo, save_tensors
@@ -81,6 +82,7 @@ def train_processor(
                     batch_images.append(background)
                     batch_tensors.append(list_of_tensors)
                     pbar.update(1)  # Update the progress bar
+                    gc.collect()
         return batch_images, batch_tensors
 
     # build and save dataset
@@ -98,5 +100,14 @@ def train_processor(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s",  # --dataset_size
+        "--dataset_size",
+        type=int,
+        default=512,
+        help="Size of the dataset to build",
+    )
+    args = parser.parse_args()
     train_set, test_set, labels = build_dataset()
-    train_processor(train_set, test_set, labels, dataset_size=20)
+    train_processor(train_set, test_set, labels, dataset_size=args.dataset_size)
