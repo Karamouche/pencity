@@ -34,9 +34,9 @@ def train_processor(
             rd.seed(seed)
 
         def get_random_drawings() -> List[dict]:
-            picked = dataset.shuffle().select(range(N_ITEMS))
+            picked = dataset.shuffle(keep_in_memory=True).select(range(N_ITEMS))
             while len(set([item["label"] for item in picked])) < N_ITEMS / 2:
-                picked = dataset.shuffle().select(range(N_ITEMS))
+                picked = dataset.shuffle(keep_in_memory=True).select(range(N_ITEMS))
             return picked
 
         def create_image() -> np.ndarray:
