@@ -3,3 +3,5 @@ torch
 torchvision
 opencv-python
 matplotlib
+ultralytics
+

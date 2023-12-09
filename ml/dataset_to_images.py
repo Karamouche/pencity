@@ -12,13 +12,16 @@ from build_dataset import DATASET_PATH, PROJECT_LABELS
 
 IMAGES_PER_LABELS = 3000
 
+SIZE_MIN_IMAGE = 72
+SIZE_MAX_IMAGE = 92
+
 IMAGES_PATH = os.path.join(os.path.dirname(__file__), "dataset", "images_dataset")
 
 """
 REQUIREMENTS:
 - space on your disk : 1.5 GB
 
-in the dataset folder, create folders following this structure:
+Folders are followinf this structure:
 
 dataset
 ├── images_dataset
@@ -63,8 +66,9 @@ def create_image_sublists(dataset, max_images_per_label=3000, max_images_per_gro
     print(len(dataset))
     for item in tqdm(dataset, desc='Create dict for each label : '):
         if item['label'] in labels_keep_index:
-            if label_images[item['label']] != max_images_per_label :
+            if len(label_images[item['label']]) != max_images_per_label :
                 label_images[item['label']].append(item)
+    
 
     # Flatten the list and shuffle
     all_images = [image for images in label_images.values() for image in images]
@@ -96,21 +100,20 @@ def check_overlap(new_box, existing_boxes):
     return False
 
 
-def create_white_image(width, height):
+def create_black_canvas(width, height):
     return Image.new("RGB", (width, height), "black")
 
-def place_images(base_image, images_to_place, image_size=82):
+def place_images(base_image, images_to_place, image_size_min=72, image_size_max = 92):
     base_w, base_h = base_image.size
     annotations = []
     placed_boxes = []
-    
-    image_data = images_to_place["image"]
-    image_label = images_to_place["label"]
-    
-    #list of data and label as tuple
-    image_data_list = list(zip(image_data, image_label))
 
-    for img, img_label in image_data_list:
+    for img_data in images_to_place:
+        
+        img = img_data['image']
+        img_label = img_data['label']
+        
+        image_size = random.randint(image_size_min, image_size_max)
 
         img_np = np.array(img)
         resized_img_np = cv2.resize(img_np, (image_size, image_size), interpolation=cv2.INTER_CUBIC)
@@ -151,11 +154,11 @@ if __name__ == "__main__":
         all_images = dataset[type_data]
 
         
-        image_groups = create_image_sublists(all_images, max_images_per_label=3000, max_images_per_group=8, min_images_per_group=4)
+        image_groups = create_image_sublists(all_images, max_images_per_label=IMAGES_PER_LABELS, max_images_per_group=8, min_images_per_group=4)
 
         for index, image_group in enumerate(tqdm(image_groups)):
-            base_img = create_white_image(base_width, base_height)
-            result_img, annotations = place_images(base_img, image_group, image_size=82)
+            base_img = create_black_canvas(base_width, base_height)
+            result_img, annotations = place_images(base_img, image_group, image_size_min=SIZE_MIN_IMAGE, image_size_max=SIZE_MAX_IMAGE)
 
             result_img.save(IMAGES_PATH + f"/{type_data}/images/image_{index}.png")
 
