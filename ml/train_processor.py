@@ -19,7 +19,7 @@ def train_processor(
     train_set: Dataset,
     test_set: Dataset,
     class_names: List[str],
-    BACKGROUND_SIZE: int = 416,
+    BACKGROUND_SIZE: int = 640,
     amount_per_label=3000,
     seed=0,
 ):
@@ -81,10 +81,10 @@ def train_processor(
             for img in images:
                 label = img["label"]
                 img = np.array(img["image"])
-                # resize the image randomly between x1 and x2.5
+                # resize the image randomly between x1.5 and x3
                 H, W = img.shape
                 img_ratio = float(W) / float(H)
-                W = rd.randint(W, W * 2.5)
+                W = rd.randint(W * 1.5, W * 3)
                 H = int(W / img_ratio)
                 img = cv2.resize(
                     img,
