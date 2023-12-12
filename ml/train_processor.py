@@ -24,7 +24,7 @@ def train_processor(
     seed=0,
 ):
     def build_batch(
-        dataset: Dataset, amount_per_label: int, seed: int = 0
+        dataset: Dataset, split: str, amount_per_label: int, seed: int = 0
     ) -> Tuple[List[np.ndarray], List[torch.Tensor]]:
         batch_images = []
         batch_tensors = []
@@ -81,63 +81,61 @@ def train_processor(
             for img in images:
                 label = img["label"]
                 img = np.array(img["image"])
-                # resize the image randomly between x1.5 and x3
+                # resize the image randomly between x2.5 and x4.5
                 H, W = img.shape
                 img_ratio = float(W) / float(H)
-                W = rd.randint(W * 1.5, W * 3)
+                W = rd.randint(W * 2.5, W * 4.5)
                 H = int(W / img_ratio)
                 img = cv2.resize(
                     img,
                     (W, H),
                     interpolation=cv2.INTER_CUBIC,
                 )
+                # rotate the image randomly between -40° and 40°
+                angle = rd.randint(-40, 40)
+                M = cv2.getRotationMatrix2D((W / 2, H / 2), angle, 1)
+                img = cv2.warpAffine(img, M, (W, H))
+                # binarize the image
+                img = np.where(img > 178, 255, 0).astype(np.uint8)
                 assert img.shape == (H, W)
                 x = rd.randint(0, BACKGROUND_SIZE - W)
                 y = rd.randint(0, BACKGROUND_SIZE - H)
                 # be sure that the image is not overlapping another one
+                overlap_count = 0
+                do_past = True
                 while np.any(background[y : y + H, x : x + W]):
                     x = rd.randint(0, BACKGROUND_SIZE - W)
                     y = rd.randint(0, BACKGROUND_SIZE - H)
-                background[y : y + H, x : x + W] = img
-                yolo_tensor = from_coords_to_yolo(
-                    img, x, y, label, BACKGROUND_SIZE, class_names
-                )
-                list_of_tensors.append(yolo_tensor)
+                    overlap_count += 1
+                    if overlap_count > 30:
+                        print("Can't past the image with no overlapping")
+                        do_past = False
+                        break
+                if do_past:
+                    background[y : y + H, x : x + W] = img
+                    yolo_tensor = from_coords_to_yolo(
+                        img, x, y, label, BACKGROUND_SIZE, class_names
+                    )
+                    list_of_tensors.append(yolo_tensor)
             return background, torch.stack(list_of_tensors)
 
         image_groups = create_image_groups()
         print(f"Nombre de groupes : {len(image_groups)}")
         for groups in tqdm(image_groups, desc="Creating images"):
             background, list_of_tensors = create_image(groups)
-            batch_images.append(background)
-            batch_tensors.append(list_of_tensors)
-        return batch_images, batch_tensors
+            save_data(background, list_of_tensors, split=split)
 
     # build and save dataset
     print("Building train data")
     build_save_folders(split="train")
-    train_batch_images, train_batch_tensors = build_batch(
-        train_set, amount_per_label=amount_per_label, seed=seed
-    )
-    for img, tens in tqdm(
-        zip(train_batch_images, train_batch_tensors),
-        desc="Saving train data",
-        total=len(train_batch_images),
-    ):
-        save_data(img, tens, split="train")
+    build_batch(train_set, split="train", amount_per_label=amount_per_label, seed=seed)
 
     print(f"Batch for train saved")
     print("\nBuilding test data")
     build_save_folders(split="test")
-    test_batch_images, test_batch_tensors = build_batch(
-        test_set, amount_per_label=int(amount_per_label / 4), seed=seed
+    build_batch(
+        test_set, split="test", amount_per_label=int(amount_per_label / 4), seed=seed
     )
-    for img, tens in tqdm(
-        zip(test_batch_images, test_batch_tensors),
-        desc="Saving test data",
-        total=len(test_batch_images),
-    ):
-        save_data(img, tens, split="test")
 
     print(f"Batch for test saved")
     print("\nDataset built")
