@@ -91,8 +91,8 @@ def train_processor(
                     (W, H),
                     interpolation=cv2.INTER_CUBIC,
                 )
-                # rotate the image randomly between -30° and 30°
-                angle = rd.randint(-30, 30)
+                # rotate the image randomly between -20° and 20°
+                angle = rd.randint(-20, 20)
                 M = cv2.getRotationMatrix2D((W / 2, H / 2), angle, 1)
                 img = cv2.warpAffine(img, M, (W, H))
                 # binarize the image
