@@ -136,6 +136,19 @@ if __name__ == "__main__":
         default=512,
         help="How many images per label in the dataset",
     )
+    parser.add_argument(
+        "-r",  # --dataset_size
+        "--random_seed",
+        type=int,
+        default=0,
+        help="Seed to reproduce the same dataset",
+    )
     args = parser.parse_args()
     train_set, test_set, labels = build_dataset()
-    train_processor(train_set, test_set, labels, amount_per_label=args.size_per_label)
+    train_processor(
+        train_set,
+        test_set,
+        labels,
+        amount_per_label=args.size_per_label,
+        seed=args.random_seed,
+    )
