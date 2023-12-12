@@ -6,7 +6,7 @@ To get the repo to train YOLOv5, you need to clone the repo `https://github.com/
 For training, you need to run the following command : \
 
 -   For YOLOv5n :
-    `python ml/yolov5/train.py --data ml/data/pencity.yaml --project "pencity" --img 416 --batch 128 --epochs 100 --weights "" --cfg ml/yolov5/models/yolov5n.yaml --cache ram`
+    `python ml/yolov5/train.py --data ml/data/pencity.yaml --project "pencity" --img 640 --batch 128 --epochs 100 --weights "" --cfg ml/yolov5/models/yolov5n.yaml --cache ram`
 
 -   For YOLOv8n :
     `python yolo detect train data=ml/data/pencity.yaml model=yolov8n.yaml epochs=100 imgsz=640`
