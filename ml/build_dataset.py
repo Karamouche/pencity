@@ -6,33 +6,33 @@ from tqdm import tqdm
 from datasets import load_dataset, load_from_disk, Dataset
 from typing import Tuple, List
 
-DATASET_PATH = os.path.join(os.path.dirname(__file__), "dataset", "pencity")
+DATASET_PATH = os.path.join(os.path.dirname(__file__), "data", "pencity")
 PROJECT_LABELS = [
     "house",
-    "bicycle",
+    # "bicycle",
     "bridge",
     "bus",
     "car",
     "church",
-    "firetruck",
+    # "firetruck",
     "garden",
     "hospital",
-    "motorbike",
+    # "motorbike",
     "palm tree",
-    "pickup truck",
+    # "pickup truck",
     "police car",
     "river",
     "roller coaster",
-    "rollerskates",
+    # "rollerskates",
     "school bus",
     "skyscraper",
     "tent",
     "The Eiffel Tower",
-    "tractor",
-    "traffic light",
+    # "tractor",
+    # "traffic light",
     "train",
     "tree",
-    "van",
+    # "van",
 ]
 
 
@@ -42,6 +42,13 @@ def build_dataset() -> Tuple[Dataset, Dataset, List[str]]:
         print("Dataset exists")
     except:
         print("Dataset not found, creating it")
+        print("Do you want to build it ? (y/n)")
+        anwer = str(input())
+        while anwer not in ["y", "n"]:
+            print("Please answer by y or n")
+            anwer = str(input())
+        if anwer == "n":
+            return
         preprocess_dataset()
         dataset = load_from_disk(DATASET_PATH)
     return dataset["train"], dataset["test"], PROJECT_LABELS
