@@ -91,7 +91,9 @@ def save_tensors(
     else:
         for file in os.listdir(os.path.join(batch_folder, "images")):
             os.remove(os.path.join(batch_folder, "images", file))
-    for i, img in tqdm(enumerate(batch_images), desc=f"Saving {split} images"):
+    for i, img in tqdm(
+        enumerate(batch_images), desc=f"Saving {split} images", total=len(batch_images)
+    ):
         plt.imsave(os.path.join(batch_folder, "images", f"{i}.png"), img, cmap="gray")
     # save batch labels in batch/labels folder
     if not os.path.exists(os.path.join(batch_folder, "labels")):
@@ -99,7 +101,11 @@ def save_tensors(
     else:
         for file in os.listdir(os.path.join(batch_folder, "labels")):
             os.remove(os.path.join(batch_folder, "labels", file))
-    for i, tensors in tqdm(enumerate(batch_tensors), desc=f"Saving {split} labels"):
+    for i, tensors in tqdm(
+        enumerate(batch_tensors),
+        desc=f"Saving {split} labels",
+        total=len(batch_tensors),
+    ):
         with open(os.path.join(batch_folder, "labels", f"{i}.txt"), "w") as f:
             for element in tensors:
                 # save in format [Cn, Bx, By, Bh, Bw]
