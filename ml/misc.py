@@ -76,11 +76,7 @@ def from_yolo_to_coords(tensor: torch.Tensor, BACKGROUND_SIZE: int) -> List[int]
     return x, y, h, w
 
 
-def save_tensors(
-    batch_images: List[np.ndarray],
-    batch_tensors: List[torch.Tensor],
-    split: str = "train",
-) -> None:
+def build_save_folders(split: str) -> None:
     batch_folder = os.path.join(os.path.dirname(__file__), "data", "batch", split)
     # check if batch folder exists
     if not os.path.exists(batch_folder):
@@ -91,28 +87,31 @@ def save_tensors(
     else:
         for file in os.listdir(os.path.join(batch_folder, "images")):
             os.remove(os.path.join(batch_folder, "images", file))
-    for i, img in tqdm(
-        enumerate(batch_images), desc=f"Saving {split} images", total=len(batch_images)
-    ):
-        plt.imsave(os.path.join(batch_folder, "images", f"{i}.png"), img, cmap="gray")
     # save batch labels in batch/labels folder
     if not os.path.exists(os.path.join(batch_folder, "labels")):
         os.makedirs(os.path.join(batch_folder, "labels"))
     else:
         for file in os.listdir(os.path.join(batch_folder, "labels")):
             os.remove(os.path.join(batch_folder, "labels", file))
-    for i, tensors in tqdm(
-        enumerate(batch_tensors),
-        desc=f"Saving {split} labels",
-        total=len(batch_tensors),
-    ):
-        with open(os.path.join(batch_folder, "labels", f"{i}.txt"), "w") as f:
-            for element in tensors:
-                # save in format [Cn, Bx, By, Bh, Bw]
-                for j, propertie in enumerate(element.tolist()):
-                    if j == 0:
-                        f.write(f"{int(propertie)} ")
-                    else:
-                        f.write(f"{propertie} ")
-                f.write("\n")
-    print(f"Batch for {split} saved")
+
+
+def save_data(
+    image: np.ndarray,
+    tensors: torch.Tensor,
+    split: str = "train",
+) -> None:
+    batch_folder = os.path.join(os.path.dirname(__file__), "data", "batch", split)
+    index = len(os.listdir(os.path.join(batch_folder, "images")))
+    assert len(os.listdir(os.path.join(batch_folder, "images"))) == len(
+        os.listdir(os.path.join(batch_folder, "labels"))
+    )
+    plt.imsave(os.path.join(batch_folder, "images", f"{index}.png"), image, cmap="gray")
+    with open(os.path.join(batch_folder, "labels", f"{index}.txt"), "w") as f:
+        for element in tensors:
+            # save in format [Cn, Bx, By, Bh, Bw]
+            for j, propertie in enumerate(element.tolist()):
+                if j == 0:
+                    f.write(f"{int(propertie)} ")
+                else:
+                    f.write(f"{propertie} ")
+            f.write("\n")

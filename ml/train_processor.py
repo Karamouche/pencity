@@ -12,7 +12,7 @@ import gc
 import argparse
 
 from build_dataset import build_dataset
-from misc import from_coords_to_yolo, save_tensors
+from misc import from_coords_to_yolo, save_data, build_save_folders
 
 
 def train_processor(
@@ -115,15 +115,31 @@ def train_processor(
 
     # build and save dataset
     print("Building train data")
+    build_save_folders(split="train")
     train_batch_images, train_batch_tensors = build_batch(
         train_set, amount_per_label=amount_per_label, seed=seed
     )
-    save_tensors(train_batch_images, train_batch_tensors, split="train")
+    for img, tens in tqdm(
+        zip(train_batch_images, train_batch_tensors),
+        desc="Saving train data",
+        total=len(train_batch_images),
+    ):
+        save_data(img, tens, split="train")
+
+    print(f"Batch for train saved")
     print("\nBuilding test data")
+    build_save_folders(split="test")
     test_batch_images, test_batch_tensors = build_batch(
         test_set, amount_per_label=int(amount_per_label / 4), seed=seed
     )
-    save_tensors(test_batch_images, test_batch_tensors, split="test")
+    for img, tens in tqdm(
+        zip(test_batch_images, test_batch_tensors),
+        desc="Saving test data",
+        total=len(test_batch_images),
+    ):
+        save_data(img, tens, split="test")
+
+    print(f"Batch for test saved")
     print("\nDataset built")
 
 
