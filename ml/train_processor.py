@@ -107,8 +107,7 @@ def train_processor(
                     x = rd.randint(0, BACKGROUND_SIZE - W)
                     y = rd.randint(0, BACKGROUND_SIZE - H)
                     overlap_count += 1
-                    if overlap_count > 30:
-                        print("Can't past the image with no overlapping")
+                    if overlap_count > 50:
                         do_past = False
                         break
                 if do_past:
