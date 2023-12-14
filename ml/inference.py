@@ -3,7 +3,9 @@ import torch
 import argparse
 import time
 
-CONFIDENCE_TRESHOLD = 0.7
+from build_dataset import PROJECT_LABELS
+
+CONFIDENCE_TRESHOLD = 0.6
 
 
 def load_model(weight_path, name="ultralytics/yolov5"):
@@ -12,8 +14,6 @@ def load_model(weight_path, name="ultralytics/yolov5"):
 
 
 def preprocess_cam(frame):
-    # resize to 640x640
-    frame = cv2.resize(frame, (640, 640))
     # to grayscaleYOLOv5
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # to black and white
@@ -21,7 +21,44 @@ def preprocess_cam(frame):
     # reverse color
     frame = cv2.bitwise_not(frame)
     # remove black noise
-    frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, (3, 3))
+    frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, (6, 6))
+    # dilate to make curves thicker
+    frame = cv2.dilate(frame, (5, 5))
+    # lisser les contours
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
+
+    return frame
+
+
+def draw_pred(frame, results):
+    for element in results.pred[0].tolist():
+        # draw rectangle on frame
+        x1, y1, x2, y2 = [int(value) for value in element[0:4]]
+
+        # draw rectangle
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
+        # draw a red background rectangle for text
+        label = int(element[5])
+        conf_score = element[4]
+        label_name = f"{PROJECT_LABELS[label]} {conf_score:.2f}"
+        cv2.rectangle(
+            frame,
+            (x1, y1 - 15),
+            (x1 + len(label_name) * 7, y1),
+            (255, 0, 0),
+            -1,
+        )
+        # Write label
+        cv2.putText(
+            frame,
+            label_name,
+            (x1, y1 - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 255, 255),
+            1,
+        )
 
     return frame
 
@@ -45,11 +82,10 @@ if __name__ == "__main__":
         ret, frame = cap.read()
 
         # apply preprocessing on frame
-        frame = preprocess_cam(frame)
+        frame_bin = preprocess_cam(frame)
 
         # Perform inference on the frame
-        results = model(frame)
-        print(results.pred)
+        results = model(frame_bin)
         # Apply confidence threshold
         confiend_elements = [
             good for good in results.pred[0].tolist() if good[4] > CONFIDENCE_TRESHOLD
@@ -57,14 +93,15 @@ if __name__ == "__main__":
         results.pred[0] = torch.tensor(confiend_elements)
 
         # Display the results
-        cv2.imshow("Drawlo", results.render()[0])
+        cv2.imshow("Drawlo-bin", results.render()[0])
+        cv2.imshow("Drawlo", draw_pred(frame, results))
 
         # Check for 'q' key press to exit
         if cv2.waitKey(1) == ord("q"):
             break
 
         # Delay so it works 24 fps
-        time.sleep(0.05)
+        # time.sleep(0.05)
 
     # Release the webcam and close any open windows
     cap.release()
