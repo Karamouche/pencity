@@ -5,7 +5,7 @@ import time
 
 from build_dataset import PROJECT_LABELS
 
-CONFIDENCE_TRESHOLD = 0.6
+CONFIDENCE_TRESHOLD = 0.75
 
 
 def load_model(weight_path, name="ultralytics/yolov5"):
@@ -16,10 +16,10 @@ def load_model(weight_path, name="ultralytics/yolov5"):
 def preprocess_cam(frame):
     # to grayscaleYOLOv5
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # to black and white
-    _, frame = cv2.threshold(frame, 115, 255, cv2.THRESH_BINARY)
     # reverse color
     frame = cv2.bitwise_not(frame)
+    # to black and white
+    _, frame = cv2.threshold(frame, 135, 255, cv2.THRESH_BINARY)
     # remove black noise
     frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, (6, 6))
     # dilate to make curves thicker
