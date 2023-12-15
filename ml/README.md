@@ -10,3 +10,8 @@ For training, you need to run the following command : \
 
 -   For YOLOv8n :
     `python yolo detect train data=ml/data/pencity.yaml model=yolov8n.yaml epochs=100 imgsz=640`
+
+### Inference
+
+To run inference, your weights must be in the `ml/weights/v{8 or 5}` folder. \
+Then, you can run the following command : `python ml/inference.py -w [weight_path]`
