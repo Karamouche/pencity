@@ -7,7 +7,7 @@ from ultralytics import YOLO as YOLOv8
 from build_dataset import PROJECT_LABELS
 
 # set confidence threshold
-CONFIDENCE_TRESHOLD = 0.7
+CONFIDENCE_TRESHOLD = 0.5
 # assign a random color for each label
 COLOR_PER_LABEL = [
     (rd.randint(0, 255), rd.randint(0, 255), rd.randint(0, 255))
@@ -33,7 +33,7 @@ def preprocess_cam(frame: cv2.Mat) -> cv2.Mat:
     # reverse color
     frame = cv2.bitwise_not(frame)
     # to black and white
-    _, frame = cv2.threshold(frame, 180, 255, cv2.THRESH_BINARY)
+    _, frame = cv2.threshold(frame, 160, 255, cv2.THRESH_BINARY)
     # remove black noise
     frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, (5, 5))
     # dilate to make curves thicker
