@@ -7,3 +7,4 @@ batch
 test*
 yolov5/*
 runs/*
+*.onnx

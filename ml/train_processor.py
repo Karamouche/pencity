@@ -1,14 +1,11 @@
 from datasets import Dataset
 from typing import List, Tuple
-import os
 import torch
 from tqdm import tqdm
 from PIL import Image
 import random as rd
 import numpy as np
 import cv2
-from concurrent.futures import ThreadPoolExecutor
-import gc
 import argparse
 
 from build_dataset import build_dataset
@@ -26,13 +23,23 @@ def train_processor(
     def build_batch(
         dataset: Dataset, split: str, amount_per_label: int, seed: int = 0
     ) -> Tuple[List[np.ndarray], List[torch.Tensor]]:
+        """
+        Create a batch of images (canvas) and save it
+        """
         batch_images = []
         batch_tensors = []
         # seed to reproduce the same batch
         if seed != 0:
             rd.seed(seed)
 
-        def create_image_groups(max_images_per_group=16, min_images_per_group=8):
+        def create_image_groups(min_images_per_group=8, max_images_per_group=16):
+            """
+            Create groups of images to create a batch
+
+            Args:
+                min_images_per_group (int, optional): Minimum number of images per group. Defaults to 8.
+                max_images_per_group (int, optional): Maximum number of images per group. Defaults to 16.
+            """
             label_images = {i: [] for i in range(len(class_names))}
             print(f"Taille du dataset: {len(dataset)}")
             picking_pbar = tqdm(
@@ -76,6 +83,9 @@ def train_processor(
             return image_groups
 
         def create_image(images) -> np.ndarray:
+            """
+            Create an image (canvas) from a list of images
+            """
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
