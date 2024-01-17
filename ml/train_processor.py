@@ -96,10 +96,20 @@ def train_processor(
                 img_ratio = float(W) / float(H)
                 W = rd.randint(W * 2.5, W * 4.5)
                 H = int(W / img_ratio)
+                # randomly choose an interpolation method
+                interpolation = rd.choice(
+                    [
+                        cv2.INTER_NEAREST,
+                        cv2.INTER_LINEAR,
+                        cv2.INTER_AREA,
+                        cv2.INTER_CUBIC,
+                        cv2.INTER_LANCZOS4,
+                    ]
+                )
                 img = cv2.resize(
                     img,
                     (W, H),
-                    interpolation=cv2.INTER_CUBIC,
+                    interpolation=interpolation,
                 )
                 # rotate the image randomly between -20° and 20°
                 angle = rd.randint(-20, 20)
@@ -126,6 +136,7 @@ def train_processor(
                         img, x, y, label, BACKGROUND_SIZE, class_names
                     )
                     list_of_tensors.append(yolo_tensor)
+            # add noise to the background (like white lines)
             return background, torch.stack(list_of_tensors)
 
         image_groups = create_image_groups()
