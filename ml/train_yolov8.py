@@ -1,17 +1,21 @@
-
 from ultralytics import YOLO
+import argparse
 
-def train_model():
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--name_folder", help="Add repository name for yolo v8 results training.", default="yolov8n_custom")
+    args = parser.parse_args()
+ 
     # Load the model.
     model = YOLO('yolov8n.pt')
-    
+ 
     # Training.
     results = model.train(
-       data='data/pencity.yaml',
-       imgsz=416,
-       epochs=50,
+       data='ml/data/pencity.yaml',
+       imgsz=640,
+       epochs=3,
        batch=16,
-       name='yolov8n_custom')
+       name=args.name_folder)
 
 if __name__ == '__main__':
-    train_model()
+    main()
