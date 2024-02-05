@@ -1,3 +1,4 @@
 exp/
 ml/yolov5
 *.log
+runs/*
