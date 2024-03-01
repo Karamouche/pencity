@@ -9,11 +9,10 @@ public class YOLODetectionAR : MonoBehaviour
     public NNModel modelAsset;
     public GameObject labelPrefab; // Prefab with Text component for displaying class names
     public Transform labelsParent; // UI parent to keep the scene organized
-    public RawImage webcamDisplay; // Assign this in the Inspector
+    public Texture2D testImage; // Assign this in the Inspector with your static image
 
     private Model runtimeModel;
     private IWorker worker;
-    private WebCamTexture webcamTexture;
 
     private Dictionary<int, string> classLabels = new Dictionary<int, string>
     {
@@ -24,43 +23,25 @@ public class YOLODetectionAR : MonoBehaviour
     };
 
     void Start()
-{
-    runtimeModel = ModelLoader.Load(modelAsset);
-    if (runtimeModel != null)
     {
-        Debug.Log("Model loaded successfully.");
-        worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel);
-    }
-    else
-    {
-        Debug.LogError("Failed to load model.");
-    }
-
-    webcamTexture = new WebCamTexture();
-    if (webcamDisplay != null) {
-        webcamDisplay.texture = webcamTexture;
-    } else {
-        Debug.LogError("WebcamDisplay RawImage has not been assigned in the inspector.");
-    }
-    webcamTexture.Play();
-}
-
-
-    void Update()
-    {
-        if (webcamTexture.didUpdateThisFrame)
+        runtimeModel = ModelLoader.Load(modelAsset);
+        if (runtimeModel != null)
         {
-            ProcessWebcamInput();
+            Debug.Log("Model loaded successfully.");
+            worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, runtimeModel);
         }
+        else
+        {
+            Debug.LogError("Failed to load model.");
+            return;
+        }
+
+        ProcessStaticImage(testImage);
     }
 
-    void ProcessWebcamInput()
+    void ProcessStaticImage(Texture2D image)
     {
-        Texture2D inputImage = new Texture2D(webcamTexture.width, webcamTexture.height);
-        inputImage.SetPixels(webcamTexture.GetPixels());
-        inputImage.Apply();
-
-        Tensor inputTensor = Preprocess(inputImage);
+        Tensor inputTensor = Preprocess(image);
         worker.Execute(inputTensor);
         Tensor outputTensor = worker.PeekOutput();
 
@@ -68,7 +49,6 @@ public class YOLODetectionAR : MonoBehaviour
 
         inputTensor.Dispose();
         outputTensor.Dispose();
-        Destroy(inputImage);
     }
 
     private Tensor Preprocess(Texture2D inputImage)
@@ -90,48 +70,43 @@ public class YOLODetectionAR : MonoBehaviour
         return result;
     }
 
-   private void ProcessOutput(Tensor outputTensor)
-{
-    bool detected = false;
-
-    // Assuming the output format [1, 1, 8400, 21] means we have 400 detections, each represented by 21 values
-    int detections = outputTensor.shape[2] / 21; // Calculate the number of detections
-
-    for (int i = 0; i < detections; i++)
+    private void ProcessOutput(Tensor outputTensor)
     {
-        float confidence = outputTensor[0, 0, i * 21, 0]; // Assuming first value of each detection is confidence
+        bool detected = false;
 
-        if (confidence <= 0.2) // Threshold to filter out low confidence detections
-            continue;
+        int detections = outputTensor.shape[2] / 21;
 
-        int classId = -1;
-        float maxProb = 0f;
-
-        for (int j = 1; j < 21; j++) // Start from 1 assuming 0 is confidence
+        for (int i = 0; i < detections; i++)
         {
-            float prob = outputTensor[0, 0, i * 21 + j, 0];
-            if (prob > maxProb)
+            float confidence = outputTensor[0, 0, i * 21, 0];
+
+            if (confidence <= 0.2)
+                continue;
+
+            int classId = -1;
+            float maxProb = 0f;
+
+            for (int j = 1; j < 21; j++)
             {
-                maxProb = prob;
-                classId = j - 1; // Adjust because class labels start from 0
+                float prob = outputTensor[0, 0, i * 21 + j, 0];
+                if (prob > maxProb)
+                {
+                    maxProb = prob;
+                    classId = j - 1;
+                }
+            }
+
+            if (classId != -1)
+            {
+                detected = true;
+                string detectedClassName = classLabels[classId];
+                // Only log if an object is detected to avoid flooding the console
+                Debug.Log($"Object Detected: {detectedClassName} | Confidence: {confidence} | Probability: {maxProb}");
+                DisplayClassName(detectedClassName);
+                break; // Display the first detected class for simplicity
             }
         }
-
-        // Check if a valid class ID was found
-        if (classId != -1)
-        {
-            detected = true;
-            string detectedClassName = classLabels.ContainsKey(classId) ? classLabels[classId] : "Unknown";
-            Debug.Log($"Detected: {detectedClassName} with confidence: {confidence} and probability: {maxProb}");
-            DisplayClassName(detectedClassName);
-            break; // For simplicity, assuming only one detection is handled
-        }
     }
-
-   
-}
-
-
 
     private void DisplayClassName(string className)
     {
@@ -142,11 +117,6 @@ public class YOLODetectionAR : MonoBehaviour
 
         GameObject labelGo = Instantiate(labelPrefab, labelsParent);
         TextMeshProUGUI labelText = labelGo.GetComponentInChildren<TextMeshProUGUI>();
-        if (labelText == null)
-        {
-            Debug.LogError("No TextMeshProUGUI component found on labelPrefab or its children.");
-            return;
-        }
         labelText.text = className;
     }
 }

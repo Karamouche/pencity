@@ -595,7 +595,7 @@ MonoBehaviour:
     type: 3}
   labelPrefab: {fileID: 2080546257}
   labelsParent: {fileID: 2080546258}
-  webcamDisplay: {fileID: 940653097}
+  testImage: {fileID: 2800000, guid: 10d069bdc4ecdbd40b8affe08b37eaa7, type: 3}
 --- !u!4 &1490539653
 Transform:
   m_ObjectHideFlags: 0
