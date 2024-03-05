@@ -2,3 +2,4 @@ exp/
 ml/yolov5
 *.log
 runs/*
+yolov8.onnx
