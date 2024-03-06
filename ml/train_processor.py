@@ -1,14 +1,11 @@
 from datasets import Dataset
 from typing import List, Tuple
-import os
 import torch
 from tqdm import tqdm
 from PIL import Image
 import random as rd
 import numpy as np
 import cv2
-from concurrent.futures import ThreadPoolExecutor
-import gc
 import argparse
 
 from build_dataset import build_dataset
@@ -26,13 +23,23 @@ def train_processor(
     def build_batch(
         dataset: Dataset, split: str, amount_per_label: int, seed: int = 0
     ) -> Tuple[List[np.ndarray], List[torch.Tensor]]:
+        """
+        Create a batch of images (canvas) and save it
+        """
         batch_images = []
         batch_tensors = []
         # seed to reproduce the same batch
         if seed != 0:
             rd.seed(seed)
 
-        def create_image_groups(max_images_per_group=16, min_images_per_group=8):
+        def create_image_groups(min_images_per_group=8, max_images_per_group=16):
+            """
+            Create groups of images to create a batch
+
+            Args:
+                min_images_per_group (int, optional): Minimum number of images per group. Defaults to 8.
+                max_images_per_group (int, optional): Maximum number of images per group. Defaults to 16.
+            """
             label_images = {i: [] for i in range(len(class_names))}
             print(f"Taille du dataset: {len(dataset)}")
             picking_pbar = tqdm(
@@ -76,6 +83,9 @@ def train_processor(
             return image_groups
 
         def create_image(images) -> np.ndarray:
+            """
+            Create an image (canvas) from a list of images
+            """
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
@@ -86,10 +96,20 @@ def train_processor(
                 img_ratio = float(W) / float(H)
                 W = rd.randint(W * 2.5, W * 4.5)
                 H = int(W / img_ratio)
+                # randomly choose an interpolation method
+                interpolation = rd.choice(
+                    [
+                        cv2.INTER_NEAREST,
+                        cv2.INTER_LINEAR,
+                        cv2.INTER_AREA,
+                        cv2.INTER_CUBIC,
+                        cv2.INTER_LANCZOS4,
+                    ]
+                )
                 img = cv2.resize(
                     img,
                     (W, H),
-                    interpolation=cv2.INTER_CUBIC,
+                    interpolation=interpolation,
                 )
                 # rotate the image randomly between -20° and 20°
                 angle = rd.randint(-20, 20)
@@ -116,6 +136,7 @@ def train_processor(
                         img, x, y, label, BACKGROUND_SIZE, class_names
                     )
                     list_of_tensors.append(yolo_tensor)
+            # add noise to the background (like white lines)
             return background, torch.stack(list_of_tensors)
 
         image_groups = create_image_groups()
