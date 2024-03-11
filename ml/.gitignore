@@ -9,3 +9,5 @@ test*
 yolov5/*
 runs/*
 yolov8n.pt
+YOLOX/*
+apex/*

@@ -76,6 +76,26 @@ def from_yolo_to_coords(tensor: torch.Tensor, BACKGROUND_SIZE: int) -> List[int]
     return x, y, h, w
 
 
+def convert_to_absolute(yolo_bbox, background_size):
+    """
+    Convert YOLO format bounding box tensor(class, [center_x, center_y, width, height]) 
+    to absolute coordinates relative to the background size.
+
+    Parameters:
+    - yolo_bbox: The bounding box in YOLO format.
+    - background_size: The size of the background image.
+
+    Returns:
+    - The bounding box in absolute coordinates: [center_x, center_y, width, height].
+    """
+    _, cx, cy, w, h = yolo_bbox.tolist()
+    abs_cx = int(cx * background_size)
+    abs_cy = int(cy * background_size)
+    abs_w = int(w * background_size)
+    abs_h = int(h * background_size)
+    return [abs_cx, abs_cy, abs_w, abs_h]
+
+
 def build_save_folders(split: str) -> None:
     batch_folder = os.path.join(os.path.dirname(__file__), "data", "batch", split)
     # check if batch folder exists

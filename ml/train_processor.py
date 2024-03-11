@@ -1,18 +1,19 @@
 from datasets import Dataset
 from typing import List, Tuple
-import os
 import torch
 from tqdm import tqdm
 from PIL import Image
 import random as rd
 import numpy as np
 import cv2
-from concurrent.futures import ThreadPoolExecutor
-import gc
 import argparse
 
 from build_dataset import build_dataset
 from misc import from_coords_to_yolo, save_data, build_save_folders
+from draw_geometrical_forms import draw_shapes_on_image
+
+
+
 
 
 def train_processor(
@@ -22,17 +23,26 @@ def train_processor(
     BACKGROUND_SIZE: int = 640,
     amount_per_label=3000,
     seed=0,
+    percentage_data_draw = 0.5,
 ):
     def build_batch(
         dataset: Dataset, split: str, amount_per_label: int, seed: int = 0
     ) -> Tuple[List[np.ndarray], List[torch.Tensor]]:
-        batch_images = []
-        batch_tensors = []
+        """
+        Create a batch of images (canvas) and save it
+        """
         # seed to reproduce the same batch
         if seed != 0:
             rd.seed(seed)
 
-        def create_image_groups(max_images_per_group=16, min_images_per_group=8):
+        def create_image_groups(min_images_per_group=8, max_images_per_group=16):
+            """
+            Create groups of images to create a batch
+
+            Args:
+                min_images_per_group (int, optional): Minimum number of images per group. Defaults to 8.
+                max_images_per_group (int, optional): Maximum number of images per group. Defaults to 16.
+            """
             label_images = {i: [] for i in range(len(class_names))}
             print(f"Taille du dataset: {len(dataset)}")
             picking_pbar = tqdm(
@@ -76,6 +86,9 @@ def train_processor(
             return image_groups
 
         def create_image(images) -> np.ndarray:
+            """
+            Create an image (canvas) from a list of images
+            """
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
@@ -86,10 +99,20 @@ def train_processor(
                 img_ratio = float(W) / float(H)
                 W = rd.randint(W * 2.5, W * 4.5)
                 H = int(W / img_ratio)
+                # randomly choose an interpolation method
+                interpolation = rd.choice(
+                    [
+                        cv2.INTER_NEAREST,
+                        cv2.INTER_LINEAR,
+                        cv2.INTER_AREA,
+                        cv2.INTER_CUBIC,
+                        cv2.INTER_LANCZOS4,
+                    ]
+                )
                 img = cv2.resize(
                     img,
                     (W, H),
-                    interpolation=cv2.INTER_CUBIC,
+                    interpolation=interpolation,
                 )
                 # rotate the image randomly between -20° and 20°
                 angle = rd.randint(-20, 20)
@@ -116,6 +139,10 @@ def train_processor(
                         img, x, y, label, BACKGROUND_SIZE, class_names
                     )
                     list_of_tensors.append(yolo_tensor)
+            # add noise to the background (like white lines)
+            if rd.random() < percentage_data_draw:
+                background = draw_shapes_on_image(background, list_of_tensors, BACKGROUND_SIZE)
+            
             return background, torch.stack(list_of_tensors)
 
         image_groups = create_image_groups()
@@ -150,11 +177,18 @@ if __name__ == "__main__":
         help="How many images per label in the dataset",
     )
     parser.add_argument(
-        "-r",  # --dataset_size
+        "-r",  
         "--random_seed",
         type=int,
         default=0,
         help="Seed to reproduce the same dataset",
+    )
+    parser.add_argument(
+        "-n", 
+        "--percentage_noise",
+        type=float,
+        default=0.5,
+        help="Percentage of creating canvas with noise. Default is 0.5. 0 means no noise, 1 means all noise.",
     )
     args = parser.parse_args()
     train_set, test_set, labels = build_dataset()
@@ -164,4 +198,5 @@ if __name__ == "__main__":
         labels,
         amount_per_label=args.size_per_label,
         seed=args.random_seed,
+        percentage_data_draw=args.percentage_noise,
     )
