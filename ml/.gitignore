@@ -6,5 +6,6 @@ __pycache__
 batch
 test*
 yolov5/*
+yolov3/*
 runs/*
 *.onnx

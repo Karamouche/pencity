@@ -24,21 +24,25 @@ PROJECT_LABELS = [
 ]
 
 
-def build_dataset() -> Tuple[Dataset, Dataset, List[str]]:
-    try:
-        dataset = load_from_disk(DATASET_PATH)
-        print("Dataset exists")
-    except:
-        print("Dataset not found, creating it")
-        print("Do you want to build it ? (y/n)")
-        anwer = str(input())
-        while anwer not in ["y", "n"]:
-            print("Please answer by y or n")
-            anwer = str(input())
-        if anwer == "n":
-            return
+def build_dataset(force_download=False) -> Tuple[Dataset, Dataset, List[str]]:
+    if force_download:
+        print("Force download is enabled, creating dataset")
         preprocess_dataset()
-        dataset = load_from_disk(DATASET_PATH)
+    else:
+        try:
+            dataset = load_from_disk(DATASET_PATH)
+            print("Dataset exists")
+        except:
+            print("Dataset not found, creating it")
+            print("Do you want to build it ? (y/n)")
+            answer = str(input())
+            while answer not in ["y", "n"]:
+                print("Please answer by y or n")
+                answer = str(input())
+            if answer == "n":
+                return
+            preprocess_dataset()
+            dataset = load_from_disk(DATASET_PATH)
     return dataset["train"], dataset["test"], PROJECT_LABELS
 
 
@@ -95,11 +99,12 @@ def values_count(train: Dataset, test: Dataset, labels: List[str]) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--count", action="store_true")
 parser.add_argument("-v", "--vizualise", action="store_true")
+parser.add_argument("-f", "--force-download", action="store_true")
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    train_set, test_set, labels = build_dataset()
-    print(f"Dataset containes {len(labels)} differents labels")
+    train_set, test_set, labels = build_dataset(force_download=args.force_download)
+    print(f"Dataset contains {len(labels)} differents labels")
     print("Labels :")
     print(labels)
     if args.count:
