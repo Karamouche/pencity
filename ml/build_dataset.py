@@ -9,30 +9,18 @@ from typing import Tuple, List
 DATASET_PATH = os.path.join(os.path.dirname(__file__), "data", "pencity")
 PROJECT_LABELS = [
     "house",
-    # "bicycle",
     "bridge",
     "bus",
     "car",
     "church",
-    # "firetruck",
     "garden",
     "hospital",
-    # "motorbike",
-    "palm tree",
-    # "pickup truck",
-    "police car",
     "river",
-    "roller coaster",
-    # "rollerskates",
-    "school bus",
     "skyscraper",
     "tent",
     "The Eiffel Tower",
-    # "tractor",
-    # "traffic light",
     "train",
     "tree",
-    # "van",
 ]
 
 

@@ -100,7 +100,6 @@ def train_processor(
                 img_ratio = float(W) / float(H)
                 W = rd.randint(W * 2.5, W * 4.5)
                 H = int(W / img_ratio)
-
                 # randomly choose an interpolation method
                 interpolation = rd.choice(
                     [
