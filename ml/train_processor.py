@@ -85,12 +85,16 @@ def train_processor(
         def create_image(images) -> np.ndarray:
             """
             Create an image (canvas) from a list of images
+
+            Args:
+                images (List[dict]): List of images
             """
             background = np.zeros((BACKGROUND_SIZE, BACKGROUND_SIZE))
             list_of_tensors = []
             for img in images:
                 label = img["label"]
                 img = np.array(img["image"])
+
                 # resize the image randomly between x2.5 and x4.5
                 H, W = img.shape
                 img_ratio = float(W) / float(H)
@@ -99,11 +103,9 @@ def train_processor(
                 # randomly choose an interpolation method
                 interpolation = rd.choice(
                     [
-                        cv2.INTER_NEAREST,
                         cv2.INTER_LINEAR,
                         cv2.INTER_AREA,
                         cv2.INTER_CUBIC,
-                        cv2.INTER_LANCZOS4,
                     ]
                 )
                 img = cv2.resize(
@@ -111,15 +113,28 @@ def train_processor(
                     (W, H),
                     interpolation=interpolation,
                 )
+
                 # rotate the image randomly between -20° and 20°
                 angle = rd.randint(-20, 20)
                 M = cv2.getRotationMatrix2D((W / 2, H / 2), angle, 1)
                 img = cv2.warpAffine(img, M, (W, H))
+
                 # binarize the image
                 img = np.where(img > 178, 255, 0).astype(np.uint8)
                 assert img.shape == (H, W)
                 x = rd.randint(0, BACKGROUND_SIZE - W)
                 y = rd.randint(0, BACKGROUND_SIZE - H)
+
+                # randomly choose between erosion or dilation to make the image thinner or thicker
+                iteration_steps = rd.randint(1, 2)
+                kernel = np.ones(
+                    (1, 1), np.uint8
+                )  # this kernel seems to have no effect
+                if rd.random() > 0.5:
+                    img = cv2.erode(img, kernel, iterations=iteration_steps)
+                else:
+                    img = cv2.dilate(img, kernel, iterations=iteration_steps)
+
                 # be sure that the image is not overlapping another one
                 overlap_count = 0
                 do_past = True
